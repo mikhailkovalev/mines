@@ -1,5 +1,9 @@
+from ui import MainWindow
+
+
 def main():
-    print('Hello, world!')
+    main_window = MainWindow()
+    main_window.run()
 
 
 if __name__ == '__main__':
