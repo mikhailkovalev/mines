@@ -10,18 +10,22 @@ class CellStatus(IntEnum):
 
 
 class Cell(metaclass=ABCMeta):
-    flag_statuses = (
+    marked_statuses = (
+        CellStatus.MARKED_BY_FLAG,
+        CellStatus.MARKED_BY_QUESTION,
+    )
+    closed_statuses = (
         CellStatus.CLOSED,
         CellStatus.MARKED_BY_FLAG,
         CellStatus.MARKED_BY_QUESTION,
     )
-    flag_names = (
+    closed_names = (
         'closed',
         'marked_by_flag',
         'marked_by_question',
     )
-    flag_statuses_count = len(flag_statuses)
-    assert(len(flag_names) == flag_statuses_count)
+    closed_statuses_count = len(closed_statuses)
+    assert(len(closed_names) == closed_statuses_count)
 
     def __init__(self, field, position, image_manager, renderer):
         self.field = field
@@ -29,20 +33,20 @@ class Cell(metaclass=ABCMeta):
         self.image_manager = image_manager
         self.renderer = renderer
         self.status_idx = 0
-        self.status = self.flag_statuses[self.status_idx]
-        self.image = image_manager.get(self.flag_names[self.status_idx])
+        self.status = self.closed_statuses[self.status_idx]
+        self.image = image_manager.get(self.closed_names[self.status_idx])
 
     @abstractmethod
     def left_button_click(self):
         pass
 
     def right_button_click(self):
-        if self.status not in self.flag_statuses:
+        if self.status not in self.closed_statuses:
             return
 
-        self.status_idx = (self.status_idx+1) % self.flag_statuses_count
-        self.status = self.flag_statuses[self.status_idx]
-        image_name = self.flag_names[self.status_idx]
+        self.status_idx = (self.status_idx+1) % self.closed_statuses_count
+        self.status = self.closed_statuses[self.status_idx]
+        image_name = self.closed_names[self.status_idx]
         self.image = self.image_manager.get(image_name)
 
     @abstractmethod
@@ -89,3 +93,67 @@ class MinedCell(Cell):
         else:
             image_name = 'passive_mine'
         self.image = self.image_manager.get(image_name)
+
+
+class SafeCell(Cell):
+    def __init__(self, field, position, image_manager, renderer):
+        super().__init__(field, position, image_manager, renderer)
+
+        # Количество мин вокруг ячейки.
+        # Вычисляется в момент открытия ячейки.
+        # Обусловлено тем, что в момент создания
+        # ячейки ещё могут быть не созданы
+        # остальные ячейки на поле.
+        self.mined_around = None
+
+    def left_button_click(self):
+        if self.status != CellStatus.CLOSED:
+            return
+
+        self.status = CellStatus.OPENED
+        neighbors = self.field.get_neighbors(self.position)
+        self.mined_around = sum((1 for cell in neighbors if cell.is_danger()))
+        self.image = self.image_manager.get(str(self.mined_around))
+        # TODO: Уведомлять ли поле о том, что
+        # была открыта безопасная ячейка?
+
+        if self.mined_around == 0:
+            for cell in neighbors:
+                cell.left_button_click()
+
+    def middle_button_click(self):
+        if self.status != CellStatus.OPENED:
+            return
+
+        neighbors = self.field.get_neighbors(self.position)
+        marked_around = sum((
+            1 for cell in neighbors
+            if cell.status == CellStatus.MARKED_BY_FLAG
+        ))
+
+        if marked_around == self.mined_around:
+            for cell in neighbors:
+                cell.left_button_click()
+
+    def is_danger(self):
+        return False
+
+    def set_final_image(self):
+        if self.status in self.marked_statuses:
+            self.image = self.image_manager.get('false_mine')
+        elif self.mined_around is None:
+            neighbors = self.field.get_neighbors(self.position)
+
+
+class FakeCell(Cell):
+    def left_button_click(self):
+        self.field.generate(self.position)
+
+    def middle_button_click(self):
+        pass
+
+    def is_danger(self):
+        pass
+
+    def set_final_image(self):
+        pass
