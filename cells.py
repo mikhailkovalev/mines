@@ -27,14 +27,14 @@ class Cell(metaclass=ABCMeta):
     closed_statuses_count = len(closed_statuses)
     assert(len(closed_names) == closed_statuses_count)
 
-    def __init__(self, field, position, image_manager, renderer):
+    def __init__(self, field, position):
         self.field = field
         self.position = position
-        self.image_manager = image_manager
-        self.renderer = renderer
+        self.image_manager = field.image_manager
+        self.renderer = field.renderer
         self.status_idx = 0
-        self.status = self.closed_statuses[self.status_idx]
-        self.image = image_manager.get(self.closed_names[self.status_idx])
+        self.status = CellStatus.CLOSED
+        self.image = self.image_manager.get('closed')
 
     @abstractmethod
     def left_button_click(self):
@@ -114,8 +114,7 @@ class SafeCell(Cell):
         neighbors = self.field.get_neighbors(self.position)
         self.mined_around = sum((1 for cell in neighbors if cell.is_danger()))
         self.image = self.image_manager.get(str(self.mined_around))
-        # TODO: Уведомлять ли поле о том, что
-        # была открыта безопасная ячейка?
+        self.field.safe_cell_opened()
 
         if self.mined_around == 0:
             for cell in neighbors:
