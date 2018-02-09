@@ -96,8 +96,8 @@ class MinedCell(Cell):
 
 
 class SafeCell(Cell):
-    def __init__(self, field, position, image_manager, renderer):
-        super().__init__(field, position, image_manager, renderer)
+    def __init__(self, field, position):
+        super().__init__(field, position)
 
         # Количество мин вокруг ячейки.
         # Вычисляется в момент открытия ячейки.
