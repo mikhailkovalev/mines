@@ -2,7 +2,7 @@ from random import randrange
 from abc import ABCMeta, abstractmethod
 
 from api import abs_sub
-from cells import FakeCell
+from cells import FakeCell, MinedCell, SafeCell
 
 
 class AbstractField(metaclass=ABCMeta):
@@ -22,7 +22,7 @@ class AbstractField(metaclass=ABCMeta):
         # Коллекция ячеек
         self.cells = None
         self.game = game
-        self.cell_renderer = game.cell_renderer
+        self.renderer = game.renderer
         self.create_fake_field(width, height, mines_count)
 
     @abstractmethod
@@ -37,7 +37,6 @@ class AbstractField(metaclass=ABCMeta):
     def get_idx_by_position(self, position):
         return 0
 
-    @abstractmethod
     def create_fake_field(self, width, height, mines_count):
         self.width = width
         self.height = height
@@ -46,10 +45,10 @@ class AbstractField(metaclass=ABCMeta):
         self.safe_count = self.cell_count - mines_count
         self.safe_opened_count = 0
 
-        self.cells = tuple((
+        self.cells = tuple(
             FakeCell(self, self.get_position_by_idx(i))
             for i in range(self.cell_count)
-        ))
+        )
 
     def safe_cell_opened(self):
         self.safe_opened_count += 1
@@ -81,6 +80,11 @@ class AbstractField(metaclass=ABCMeta):
         :return:
         """
 
+    def render(self):
+        for cell in self.cells:
+            cell.render()
+        self.renderer.display()
+
 
 class RectangleField(AbstractField):
     """
@@ -91,6 +95,9 @@ class RectangleField(AbstractField):
 
     def get_position_by_idx(self, idx):
         return divmod(idx, self.width)
+
+    def get_idx_by_position(self, position):
+        return position[0] * self.width + position[1]
 
     def generate(self, safe_position):
         mined_cells = set()
@@ -104,6 +111,14 @@ class RectangleField(AbstractField):
 
             mined_cells.add(idx)
             mined_count += 1
+
+        new_cells = tuple(
+            MinedCell(self, self.get_idx_by_position(i), self.cells[i].status)
+            if i in mined_cells else
+            SafeCell(self, self.get_idx_by_position(i), self.cells[i].status)
+            for i in range(self.cell_count)
+        )
+        self.cells = new_cells
 
     def valid_position(self, position):
         return (0 <= position[0] < self.width and

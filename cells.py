@@ -27,14 +27,30 @@ class Cell(metaclass=ABCMeta):
     closed_statuses_count = len(closed_statuses)
     assert(len(closed_names) == closed_statuses_count)
 
-    def __init__(self, field, position):
+    def __init__(self, field, position, status=CellStatus.CLOSED):
+        """
+
+        :param field:
+        :param position:
+        :param status: В теории пользователь
+            прежде чем открыть какую-либо ячейку
+            может поставить сколь угодно флагов.
+            Поэтому при создании нормального поля
+            из фейкового, нужно переносить статус
+            ячеек.
+        """
         self.field = field
         self.position = position
         self.image_manager = field.image_manager
         self.renderer = field.renderer
-        self.status_idx = 0
-        self.status = CellStatus.CLOSED
-        self.image = self.image_manager.get('closed')
+        self.status = status
+        try:
+            self.status_idx = self.closed_statuses.index(status)
+        except ValueError:
+            raise ValueError(
+                'Передан неверный аргумент: status={}!'.format(status))
+        self.image = self.image_manager.get(
+            self.closed_names[self.status_idx])
 
     @abstractmethod
     def left_button_click(self):
@@ -96,8 +112,8 @@ class MinedCell(Cell):
 
 
 class SafeCell(Cell):
-    def __init__(self, field, position):
-        super().__init__(field, position)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Количество мин вокруг ячейки.
         # Вычисляется в момент открытия ячейки.
