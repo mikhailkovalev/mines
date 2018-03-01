@@ -4,9 +4,12 @@ from enum import IntEnum, auto
 
 class CellStatus(IntEnum):
     CLOSED = auto()
-    OPENED = auto()
     MARKED_BY_FLAG = auto()
     MARKED_BY_QUESTION = auto()
+    ACTIVE_MINE = auto()
+    FALSE_MINE = auto()
+    PASSIVE_MINE = auto()
+    NUMBER = auto()
 
 
 class Cell(metaclass=ABCMeta):
@@ -19,13 +22,7 @@ class Cell(metaclass=ABCMeta):
         CellStatus.MARKED_BY_FLAG,
         CellStatus.MARKED_BY_QUESTION,
     )
-    closed_names = (
-        'closed',
-        'marked_by_flag',
-        'marked_by_question',
-    )
     closed_statuses_count = len(closed_statuses)
-    assert(len(closed_names) == closed_statuses_count)
 
     def __init__(self, field, position, status=CellStatus.CLOSED):
         """
@@ -41,7 +38,6 @@ class Cell(metaclass=ABCMeta):
         """
         self.field = field
         self.position = position
-        self.image_manager = field.image_manager
         self.renderer = field.renderer
         self.status = status
         try:
@@ -49,8 +45,6 @@ class Cell(metaclass=ABCMeta):
         except ValueError:
             raise ValueError(
                 'Передан неверный аргумент: status={}!'.format(status))
-        self.image = self.image_manager.get(
-            self.closed_names[self.status_idx])
 
     @abstractmethod
     def left_button_click(self):
@@ -62,8 +56,6 @@ class Cell(metaclass=ABCMeta):
 
         self.status_idx = (self.status_idx+1) % self.closed_statuses_count
         self.status = self.closed_statuses[self.status_idx]
-        image_name = self.closed_names[self.status_idx]
-        self.image = self.image_manager.get(image_name)
 
     @abstractmethod
     def middle_button_click(self):
@@ -74,16 +66,7 @@ class Cell(metaclass=ABCMeta):
         pass
 
     def render(self):
-        self.renderer.render(self.position, self.image)
-
-    @abstractmethod
-    def set_final_image(self):
-        """
-        Изображение, которое должно быть
-        установлено для ячейки после завершения
-        игры
-        :return: Image
-        """
+        self.renderer.render(self)
 
 
 class MinedCell(Cell):
@@ -99,16 +82,6 @@ class MinedCell(Cell):
 
     def is_danger(self):
         return True
-
-    def set_final_image(self):
-        if self.status == CellStatus.OPENED:
-            image_name = 'active_mine'
-        elif (self.field.game.user_won or
-              self.status == CellStatus.MARKED_BY_FLAG):
-            image_name = 'marked_by_flag'
-        else:
-            image_name = 'passive_mine'
-        self.image = self.image_manager.get(image_name)
 
 
 class SafeCell(Cell):
@@ -126,7 +99,7 @@ class SafeCell(Cell):
         if self.status != CellStatus.CLOSED:
             return
 
-        self.status = CellStatus.OPENED
+        self.status = CellStatus.NUMBER
         neighbors = self.field.get_neighbors(self.position)
         self.mined_around = sum((1 for cell in neighbors if cell.is_danger()))
         self.image = self.image_manager.get(str(self.mined_around))
@@ -137,7 +110,7 @@ class SafeCell(Cell):
                 cell.left_button_click()
 
     def middle_button_click(self):
-        if self.status != CellStatus.OPENED:
+        if self.status != CellStatus.NUMBER:
             return
 
         neighbors = self.field.get_neighbors(self.position)
@@ -153,12 +126,6 @@ class SafeCell(Cell):
     def is_danger(self):
         return False
 
-    def set_final_image(self):
-        if self.status in self.marked_statuses:
-            self.image = self.image_manager.get('false_mine')
-        elif self.mined_around is None:
-            neighbors = self.field.get_neighbors(self.position)
-
 
 class FakeCell(Cell):
     def left_button_click(self):
@@ -168,7 +135,4 @@ class FakeCell(Cell):
         pass
 
     def is_danger(self):
-        pass
-
-    def set_final_image(self):
         pass

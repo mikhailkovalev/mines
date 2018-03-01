@@ -1,6 +1,8 @@
+import os.path
 from abc import ABCMeta, abstractmethod
+
 import tkinter as tk
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 from cells import CellStatus
 
@@ -31,8 +33,8 @@ class TkRenderContext(AbstractRenderContext):
         self.canvas = canvas
 
     def draw_image(self, position, image):
-        assert (isinstance(image, (tk.PhotoImage, ImageTk.PhotoImage)),
-                "Image must be tkinter.PhotoImage or ImageTk.PhotoImage!")
+        assert isinstance(image, (tk.PhotoImage, ImageTk.PhotoImage)), \
+               'Image must be tkinter.PhotoImage or ImageTk.PhotoImage!'
         self.canvas.create_image(position, image)
 
     def draw_rectangle(self, position, size):
@@ -49,43 +51,69 @@ class TkRenderContext(AbstractRenderContext):
 
 
 class AbstractRenderer(metaclass=ABCMeta):
-    """
-    Собирает изображение поля во внутреннем
-    представлении, и отображает его на холст
-    """
-
-    @abstractmethod
-    def render(self, cell):
-        """
-        Обновляет рисунок ячейки во внутреннем
-        представлении
-        """
-
-    @abstractmethod
-    def display(self):
-        """
-        Отображает внутреннее представление на
-        экран
-        """
-
-
-class RectangleRenderer(AbstractRenderer):
-    def __init__(self, context, cell_size=(32, 32)):
+    def __init__(self, context):
         self.context = context
-        self.cell_size = cell_size
 
-    def render_closed(self, cell):
-        position = tuple(
-            coord * size for coord, size
-            in zip(cell.position, self.cell_size)
-        )
-        self.context.draw_rectangle(position, self.cell_size)
-
+    @abstractmethod
     def render(self, cell):
         pass
 
-    def display(self):
-        pass
+
+class PictureRectangleRenderer(AbstractRenderer):
+    def __init__(self, context):
+        super().__init__(context)
+        self._get_images()
+
+    def _get_images(self):
+        def get_sprite(idx):
+            return ImageTk.PhotoImage(sprite.crop((0, idx * width,
+                    width, (idx+1) * width)))
+
+        path_to_sprite = os.path.join(
+            os.path.dirname(__file__),
+            'res',
+            'sprite.jpg'
+        )
+        sprite = Image.open(path_to_sprite)
+        width = sprite.size[0]
+
+        self.cell_size = (width, width)
+
+        numbers_range = range(8, -1, -1)
+        ids_range = range(7, 16)
+        self.numbers = {
+            number: get_sprite(sprite_idx)
+            for number, sprite_idx
+            in zip(numbers_range, ids_range)
+        }
+
+        statuses = (
+            CellStatus.CLOSED,
+            CellStatus.MARKED_BY_FLAG,
+            CellStatus.MARKED_BY_QUESTION,
+            CellStatus.ACTIVE_MINE,
+            CellStatus.FALSE_MINE,
+            CellStatus.PASSIVE_MINE
+        )
+        ids_range = range(len(statuses))
+        self.images = {
+            status: get_sprite(sprite_idx)
+            for status, sprite_idx
+            in zip(statuses, ids_range)
+        }
+
+    def render(self, cell):
+        if cell.status == CellStatus.NUMBER:
+            sprite = self.numbers[cell.mined_around]
+        else:
+            sprite = self.images[cell.status]
+
+        position = tuple(
+            size * coord
+            for size, coord
+            in zip(self.cell_size, cell.position)
+        )
+        self.context.draw_image(position, sprite)
 
 
 class HexagonalRenderer(AbstractRenderer):
