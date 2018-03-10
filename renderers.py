@@ -26,7 +26,7 @@ class AbstractRenderContext(metaclass=ABCMeta):
 
 
 class TkRenderContext(AbstractRenderContext):
-    def __init__(self, canvas):
+    def __init__(self, canvas=None):
         """
         :type canvas: tkinter.Canvas
         """
@@ -35,7 +35,7 @@ class TkRenderContext(AbstractRenderContext):
     def draw_image(self, position, image):
         assert isinstance(image, (tk.PhotoImage, ImageTk.PhotoImage)), \
                'Image must be tkinter.PhotoImage or ImageTk.PhotoImage!'
-        self.canvas.create_image(position, image)
+        self.canvas.create_image(position, image=image, anchor=tk.NW)
 
     def draw_rectangle(self, position, size):
         bbox = (
@@ -59,18 +59,22 @@ class AbstractRenderer(metaclass=ABCMeta):
         pass
 
 
-class PictureRectangleRenderer(AbstractRenderer):
+class RectangleRenderer(AbstractRenderer):
     def __init__(self, context):
         super().__init__(context)
-        self._get_images()
+        self.images = None
+        self.numbers = None
+        self.images_are_got = False
 
     def _get_images(self):
         def get_sprite(idx):
-            return ImageTk.PhotoImage(sprite.crop((0, idx * width,
-                    width, (idx+1) * width)))
-
+            return ImageTk.PhotoImage(sprite.crop((
+                0, idx * width,
+                width, (idx+1) * width
+            )))
+        path_to_curren_module = os.path.abspath(__file__)
         path_to_sprite = os.path.join(
-            os.path.dirname(__file__),
+            os.path.dirname(path_to_curren_module),
             'res',
             'sprite.jpg'
         )
@@ -101,8 +105,12 @@ class PictureRectangleRenderer(AbstractRenderer):
             for status, sprite_idx
             in zip(statuses, ids_range)
         }
+        self.images_are_got = True
 
     def render(self, cell):
+        if not self.images_are_got:
+            self._get_images()
+
         if cell.status == CellStatus.NUMBER:
             sprite = self.numbers[cell.mined_around]
         else:

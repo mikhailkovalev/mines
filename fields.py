@@ -3,13 +3,16 @@ from abc import ABCMeta, abstractmethod
 
 from api import abs_sub
 from cells import FakeCell, MinedCell, SafeCell
+from renderers import RectangleRenderer
 
 
 class AbstractField(metaclass=ABCMeta):
-    def __init__(self, width, height, mines_count, game):
+    def __init__(self, width, height, mines_count, game_manager):
         self.width = None
         self.height = None
         self.mines_count = None
+
+        self.game_manager = game_manager
 
         # Общее количество ячеек
         self.cell_count = None
@@ -21,8 +24,8 @@ class AbstractField(metaclass=ABCMeta):
 
         # Коллекция ячеек
         self.cells = None
-        self.game = game
-        self.renderer = game.renderer
+
+        self.renderer = self.create_renderer(game_manager.render_context)
         self.create_fake_field(width, height, mines_count)
 
     @abstractmethod
@@ -36,6 +39,11 @@ class AbstractField(metaclass=ABCMeta):
     @abstractmethod
     def get_idx_by_position(self, position):
         return 0
+
+    @staticmethod
+    @abstractmethod
+    def create_renderer(render_context):
+        pass
 
     def create_fake_field(self, width, height, mines_count):
         self.width = width
@@ -53,7 +61,7 @@ class AbstractField(metaclass=ABCMeta):
     def safe_cell_opened(self):
         self.safe_opened_count += 1
         if self.safe_opened_count == self.safe_count:
-            self.game.all_safe_opened()
+            self.game_manager.all_safe_opened()
 
     @abstractmethod
     def generate(self, safe_position):
@@ -81,15 +89,19 @@ class AbstractField(metaclass=ABCMeta):
         """
 
     def render(self):
+        self.renderer.context.canvas.config(width=12*32, height=12*32)
         for cell in self.cells:
-            cell.render()
-        self.renderer.display()
+            self.renderer.render(cell)
 
 
 class RectangleField(AbstractField):
     """
     Класс, описывающий прямоугольное минное поле
     """
+    @staticmethod
+    def create_renderer(render_context):
+        return RectangleRenderer(render_context)
+
     def get_cell_count(self, width, height):
         return width * height
 

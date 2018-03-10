@@ -1,15 +1,25 @@
+import os.path
 import tkinter as tk
+from PIL import Image, ImageTk
 
 
 class MainWindow:
-    def __init__(self):
+    def __init__(self, game_manager):
         self.font = ('arial', 8)
         self._create_widgets()
+
+        self._bind_manager(game_manager)
+
+    def _set_icon(self):
+        icon_path = os.path.join(
+            os.path.dirname(__file__), 'res', 'icon.png')
+        self.icon = ImageTk.PhotoImage(Image.open(icon_path))
+        self.root.tk.call('wm', 'iconphoto', self.root._w, self.icon)
 
     def _create_widgets(self):
         self.root = tk.Tk()
         self.root.title('Mines')
-        # TODO: добавить иконку
+        self._set_icon()
 
         self._create_left_frame()
         self._create_right_frame()
@@ -90,13 +100,19 @@ class MainWindow:
         self.status_label.pack(side='top', anchor='w')
 
         self.canvas = tk.Canvas(self.right_frame)
-        self.canvas.pack(side='bottom')
+        self.canvas.pack()
 
-    def new_game_click(self):
-        pass
+    def _bind_manager(self, game_manager):
+        self.game_manager = game_manager
+        game_manager.render_context.canvas = self.canvas
+        self.new_game_button.configure(command=game_manager.new_game)
+        self.canvas.bind('<Button-1>', game_manager.left_button_click)
+        self.canvas.bind('<Button-3>', game_manager.right_button_click)
+        self.canvas.bind('<Button-2>', game_manager.middle_button_click)
 
     def update_board(self):
         pass
 
     def run(self):
+        self.game_manager.field.render()
         self.root.mainloop()

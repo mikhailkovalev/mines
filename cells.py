@@ -38,7 +38,6 @@ class Cell(metaclass=ABCMeta):
         """
         self.field = field
         self.position = position
-        self.renderer = field.renderer
         self.status = status
         try:
             self.status_idx = self.closed_statuses.index(status)
@@ -64,9 +63,6 @@ class Cell(metaclass=ABCMeta):
     @abstractmethod
     def is_danger(self):
         pass
-
-    def render(self):
-        self.renderer.render(self)
 
 
 class MinedCell(Cell):
@@ -101,8 +97,7 @@ class SafeCell(Cell):
 
         self.status = CellStatus.NUMBER
         neighbors = self.field.get_neighbors(self.position)
-        self.mined_around = sum((1 for cell in neighbors if cell.is_danger()))
-        self.image = self.image_manager.get(str(self.mined_around))
+        self.mined_around = sum(1 for cell in neighbors if cell.is_danger())
         self.field.safe_cell_opened()
 
         if self.mined_around == 0:

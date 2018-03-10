@@ -1,8 +1,11 @@
 from ui import MainWindow
+from game_managers import GameManager
+from fields import RectangleField
 
 
 def main():
-    main_window = MainWindow()
+    manager = GameManager()
+    main_window = MainWindow(manager)
     main_window.run()
 
 
