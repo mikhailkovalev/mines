@@ -106,9 +106,9 @@ class MainWindow:
         self.game_manager = game_manager
         game_manager.render_context.canvas = self.canvas
         self.new_game_button.configure(command=game_manager.new_game)
-        self.canvas.bind('<Button-1>', game_manager.left_button_click)
-        self.canvas.bind('<Button-3>', game_manager.right_button_click)
-        self.canvas.bind('<Button-2>', game_manager.middle_button_click)
+        self.canvas.bind('<Button-1>', game_manager.mouse_click)
+        self.canvas.bind('<Button-2>', game_manager.mouse_click)
+        self.canvas.bind('<Button-3>', game_manager.mouse_click)
 
     def update_board(self):
         pass

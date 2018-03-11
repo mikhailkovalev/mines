@@ -65,8 +65,9 @@ class RectangleRenderer(AbstractRenderer):
         self.images = None
         self.numbers = None
         self.images_are_got = False
+        self.cell_size = None
 
-    def _get_images(self):
+    def get_images(self):
         def get_sprite(idx):
             return ImageTk.PhotoImage(sprite.crop((
                 0, idx * width,
@@ -109,7 +110,7 @@ class RectangleRenderer(AbstractRenderer):
 
     def render(self, cell):
         if not self.images_are_got:
-            self._get_images()
+            self.get_images()
 
         if cell.status == CellStatus.NUMBER:
             sprite = self.numbers[cell.mined_around]

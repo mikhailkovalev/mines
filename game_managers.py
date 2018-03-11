@@ -7,6 +7,11 @@ class GameManager:
     Хранит текущее состояние игры, а также управляет им.
     """
     def __init__(self):
+        self.button_method_map = {
+            1: 'left_button_click',
+            2: 'middle_button_click',
+            3: 'right_button_click'
+        }
         self.render_context = TkRenderContext()
         self.new_game()
 
@@ -25,14 +30,16 @@ class GameManager:
         self.user_won = False
         self.game_active = True
 
-    def left_button_click(self, event):
-        print('left button click!')
+    def mouse_click(self, event):
+        position = self.field.get_position_by_pixel((event.x, event.y))
+        if self.field.valid_position(position):
+            idx = self.field.get_idx_by_position(position)
+            getattr(
+                self.field.cells[idx],
+                self.button_method_map[event.num]
+            )()
+            self.field.render()
 
-    def right_button_click(self, event):
-        print('right button click!')
-
-    def middle_button_click(self, event):
-        print('middle button click!')
 
     def all_safe_opened(self):
         pass

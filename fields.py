@@ -40,6 +40,10 @@ class AbstractField(metaclass=ABCMeta):
     def get_idx_by_position(self, position):
         return 0
 
+    @abstractmethod
+    def get_position_by_pixel(self, pixel):
+        return 0
+
     @staticmethod
     @abstractmethod
     def create_renderer(render_context):
@@ -111,6 +115,15 @@ class RectangleField(AbstractField):
     def get_idx_by_position(self, position):
         return position[0] * self.width + position[1]
 
+    def get_position_by_pixel(self, pixel):
+        column = pixel[0] // self.renderer.cell_size[0]
+        row = pixel[1] // self.renderer.cell_size[1]
+        return column, row
+
+    def get_cell_by_position(self, position):
+        idx = self.get_idx_by_position(position)
+        return self.cells[idx]
+
     def generate(self, safe_position):
         mined_cells = set()
         mined_count = 0
@@ -125,12 +138,13 @@ class RectangleField(AbstractField):
             mined_count += 1
 
         new_cells = tuple(
-            MinedCell(self, self.get_idx_by_position(i), self.cells[i].status)
+            MinedCell(self, self.get_position_by_idx(i), self.cells[i].status)
             if i in mined_cells else
-            SafeCell(self, self.get_idx_by_position(i), self.cells[i].status)
+            SafeCell(self, self.get_position_by_idx(i), self.cells[i].status)
             for i in range(self.cell_count)
         )
         self.cells = new_cells
+        self.cells[self.get_idx_by_position(safe_position)].left_button_click()
 
     def valid_position(self, position):
         return (0 <= position[0] < self.width and
@@ -149,6 +163,9 @@ class RectangleField(AbstractField):
             (position[0] + row_offset[i], position[1] + column_offset[i])
             for i in range(neighbors_count)
         )
-        return tuple(filter(self.valid_position, checking_positions))
-
-
+        
+        return tuple(
+            self.get_cell_by_position(position)
+            for position in checking_positions
+            if self.valid_position(position)
+        )
