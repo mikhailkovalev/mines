@@ -24,6 +24,10 @@ class AbstractRenderContext(metaclass=ABCMeta):
     def draw_text(self, position, text, font):
         pass
 
+    @abstractmethod
+    def resize(self, width, height):
+        pass
+
 
 class TkRenderContext(AbstractRenderContext):
     def __init__(self, canvas=None):
@@ -49,6 +53,18 @@ class TkRenderContext(AbstractRenderContext):
     def draw_text(self, position, text, font):
         self.canvas.create_text(position, text=text, font=font)
 
+    def set_canvas(self, canvas):
+        """
+        :type canvas: tkinter.Canvas
+        """
+        self.canvas = canvas
+
+    def resize(self, width, height):
+        self.canvas.configure(
+            width=width,
+            height=height
+        )
+
 
 class AbstractRenderer(metaclass=ABCMeta):
     def __init__(self, context):
@@ -66,6 +82,7 @@ class RectangleRenderer(AbstractRenderer):
         self.numbers = None
         self.images_are_got = False
         self.cell_size = None
+        self.get_images()
 
     def get_images(self):
         def get_sprite(idx):

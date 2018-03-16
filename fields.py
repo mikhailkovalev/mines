@@ -7,7 +7,7 @@ from renderers import RectangleRenderer
 
 
 class AbstractField(metaclass=ABCMeta):
-    def __init__(self, width, height, mines_count, game_manager):
+    def __init__(self, field_params, game_manager):
         self.width = None
         self.height = None
         self.mines_count = None
@@ -26,7 +26,7 @@ class AbstractField(metaclass=ABCMeta):
         self.cells = None
 
         self.renderer = self.create_renderer(game_manager.render_context)
-        self.create_fake_field(width, height, mines_count)
+        self.create_fake_field(field_params)
 
     @abstractmethod
     def get_cell_count(self, width, height):
@@ -49,12 +49,11 @@ class AbstractField(metaclass=ABCMeta):
     def create_renderer(render_context):
         pass
 
-    def create_fake_field(self, width, height, mines_count):
-        self.width = width
-        self.height = height
-        self.mines_count = mines_count
-        self.cell_count = self.get_cell_count(width, height)
-        self.safe_count = self.cell_count - mines_count
+    def create_fake_field(self, field_params):
+        self.width, self.height, self.mines_count = field_params
+        self.cell_count = self.get_cell_count(
+            self.width, self.height)
+        self.safe_count = self.cell_count - self.mines_count
         self.safe_opened_count = 0
 
         self.cells = tuple(
@@ -93,9 +92,12 @@ class AbstractField(metaclass=ABCMeta):
         """
 
     def render(self):
-        self.renderer.context.canvas.config(width=12*32, height=12*32)
         for cell in self.cells:
             self.renderer.render(cell)
+
+    def get_canvas_size(self):
+        return (self.width*self.renderer.cell_size[0],
+                self.height*self.renderer.cell_size[1])
 
 
 class RectangleField(AbstractField):

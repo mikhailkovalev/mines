@@ -1,14 +1,37 @@
 import os.path
 import tkinter as tk
+from abc import abstractmethod
 from PIL import Image, ImageTk
 
+from renderers import TkRenderContext
 
-class MainWindow:
-    def __init__(self, game_manager):
+
+class Window:
+    def __init__(self):
+        self.render_context = self.create_render_context()
+
+    @abstractmethod
+    def create_render_context(self):
+        pass
+
+    @abstractmethod
+    def bind_manager(self, game_manager):
+        pass
+
+    def get_render_context(self):
+        return self.render_context
+
+
+class TkWindow(Window):
+    def __init__(self):
+        self.game_manager = None
+
         self.font = ('arial', 8)
         self._create_widgets()
+        super().__init__()
 
-        self._bind_manager(game_manager)
+    def create_render_context(self):
+        return TkRenderContext(self.canvas)
 
     def _set_icon(self):
         icon_path = os.path.join(
@@ -102,9 +125,8 @@ class MainWindow:
         self.canvas = tk.Canvas(self.right_frame)
         self.canvas.pack()
 
-    def _bind_manager(self, game_manager):
+    def bind_manager(self, game_manager):
         self.game_manager = game_manager
-        game_manager.render_context.canvas = self.canvas
         self.new_game_button.configure(command=game_manager.new_game)
         self.canvas.bind('<Button-1>', game_manager.mouse_click)
         self.canvas.bind('<Button-2>', game_manager.mouse_click)
