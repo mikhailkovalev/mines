@@ -1,5 +1,6 @@
+import time
+
 from fields import RectangleField
-from renderers import TkRenderContext, RectangleRenderer
 from api import FieldParams
 
 
@@ -17,6 +18,13 @@ class GameManager:
         self.field = None
         self.user_won = None
         self.game_active = None
+
+        self.mark_count = None
+        self.safe_opened_count = None
+        self.safe_count = None
+
+        self.game_start_clock = None
+        self.game_finish_clock = None
 
         self.render_context = None
         self.new_game()
@@ -45,6 +53,13 @@ class GameManager:
         self.user_won = False
         self.game_active = True
 
+        self.game_start_clock = None
+        self.game_finish_clock = None
+
+        self.mark_count = 0
+        self.safe_opened_count = 0
+        self.safe_count = self.field.cell_count - self.field_params.mines_count
+
     def mouse_click(self, event):
         position = self.field.get_position_by_pixel((event.x, event.y))
         if self.field.valid_position(position):
@@ -55,5 +70,23 @@ class GameManager:
             )()
             self.field.render()
 
+    def safe_cell_opened(self):
+        self.safe_opened_count += 1
+        if self.safe_opened_count == self.safe_count:
+            self.all_safe_opened()
+
+    def add_mark(self, mark_count):
+        self.mark_count += mark_count
+
+    def get_game_time(self):
+        if self.game_start_clock is None:
+            return 0
+        if self.game_finish_clock is None:
+            return int(0.5 + time.clock() - self.game_start_clock)
+        return int(0.5 + self.game_finish_clock - self.game_start_clock)
+
+    def get_remaining_mines_count(self):
+        return self.field_params.mines_count - self.mark_count
+
     def all_safe_opened(self):
-        pass
+        self.user_won = True

@@ -24,7 +24,11 @@ class Cell(metaclass=ABCMeta):
     )
     closed_statuses_count = len(closed_statuses)
 
-    def __init__(self, field, position, status=CellStatus.CLOSED):
+    def __init__(self,
+                 position,
+                 field,
+                 game_manager,
+                 status=CellStatus.CLOSED):
         """
 
         :param field:
@@ -37,6 +41,7 @@ class Cell(metaclass=ABCMeta):
             ячеек.
         """
         self.field = field
+        self.game_manager = game_manager
         self.position = position
         self.status = status
         try:
@@ -53,8 +58,17 @@ class Cell(metaclass=ABCMeta):
         if self.status not in self.closed_statuses:
             return
 
+        was_marked = self.status in self.marked_statuses
+
         self.status_idx = (self.status_idx+1) % self.closed_statuses_count
         self.status = self.closed_statuses[self.status_idx]
+
+        become_marked = self.status in self.marked_statuses
+
+        if was_marked and not become_marked:
+            self.game_manager.add_mark(-1)
+        elif not was_marked and become_marked:
+            self.game_manager.add_mark(1)
 
     @abstractmethod
     def middle_button_click(self):
@@ -98,7 +112,7 @@ class SafeCell(Cell):
         self.status = CellStatus.NUMBER
         neighbors = self.field.get_neighbors(self.position)
         self.mined_around = sum(1 for cell in neighbors if cell.is_danger())
-        self.field.safe_cell_opened()
+        self.game_manager.safe_cell_opened()
 
         if self.mined_around == 0:
             for cell in neighbors:
@@ -131,3 +145,16 @@ class FakeCell(Cell):
 
     def is_danger(self):
         pass
+
+
+_cell_types_map = dict(
+    fake=FakeCell,
+    mined=MinedCell,
+    safe=SafeCell
+)
+
+
+def cell_fabric(
+        type_, position, field, game_manager, status=CellStatus.CLOSED):
+    assert type_ in _cell_types_map, 'Incorrect cell-type "{}"!'.format(type_)
+    return _cell_types_map[type_](position, field, game_manager, status)

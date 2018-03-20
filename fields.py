@@ -2,8 +2,9 @@ from random import randrange
 from abc import ABCMeta, abstractmethod
 
 from api import abs_sub
-from cells import FakeCell, MinedCell, SafeCell
+from cells import FakeCell, cell_fabric
 from renderers import RectangleRenderer
+from functools import partial
 
 
 class AbstractField(metaclass=ABCMeta):
@@ -57,14 +58,9 @@ class AbstractField(metaclass=ABCMeta):
         self.safe_opened_count = 0
 
         self.cells = tuple(
-            FakeCell(self, self.get_position_by_idx(i))
+            FakeCell(self.get_position_by_idx(i), self, self.game_manager)
             for i in range(self.cell_count)
         )
-
-    def safe_cell_opened(self):
-        self.safe_opened_count += 1
-        if self.safe_opened_count == self.safe_count:
-            self.game_manager.all_safe_opened()
 
     @abstractmethod
     def generate(self, safe_position):
@@ -139,10 +135,15 @@ class RectangleField(AbstractField):
             mined_cells.add(idx)
             mined_count += 1
 
+        partial_cell_fabric = partial(
+            cell_fabric, field=self, game_manager=self.game_manager)
+
         new_cells = tuple(
-            MinedCell(self, self.get_position_by_idx(i), self.cells[i].status)
-            if i in mined_cells else
-            SafeCell(self, self.get_position_by_idx(i), self.cells[i].status)
+            partial_cell_fabric(
+                type_=('mined' if i in mined_cells else 'safe'),
+                position=self.get_position_by_idx(i),
+                status=self.cells[i].status
+            )
             for i in range(self.cell_count)
         )
         self.cells = new_cells
