@@ -35,6 +35,7 @@ class GameManager:
         self.render_context = render_context
         if self.field.renderer.context is None:
             self.field.renderer.context = render_context
+        self.field.render()
 
     def new_game(self):
         # FIXME: Сейчас класс поля, а также его
@@ -43,12 +44,12 @@ class GameManager:
         # информацию о типе поля в
         # конфиг-словаре.
         self.field_params = FieldParams(
-            width=12, height=12, mines_count=14)
+            width=10, height=10, mines_count=10)
         self.field = RectangleField(
             self.field_params, self)
 
         if self.render_context is not None:
-            self.render_context.resize(self.field.get_canvas_size())
+            self.render_context.resize(*self.field.get_canvas_size())
 
         self.user_won = False
         self.game_active = True
@@ -59,8 +60,12 @@ class GameManager:
         self.mark_count = 0
         self.safe_opened_count = 0
         self.safe_count = self.field.cell_count - self.field_params.mines_count
+        self.field.render()
 
     def mouse_click(self, event):
+        if not self.game_active:
+            return
+
         position = self.field.get_position_by_pixel((event.x, event.y))
         if self.field.valid_position(position):
             idx = self.field.get_idx_by_position(position)
@@ -74,19 +79,32 @@ class GameManager:
         self.safe_opened_count += 1
         if self.safe_opened_count == self.safe_count:
             self.all_safe_opened()
+        if self.game_start_clock is None:
+            self.game_start_clock = time.clock()
+
+    def mined_cell_opened(self):
+        self.finish_game(False)
 
     def add_mark(self, mark_count):
         self.mark_count += mark_count
 
-    def get_game_time(self):
+    def get_time_info(self):
         if self.game_start_clock is None:
             return 0
         if self.game_finish_clock is None:
             return int(0.5 + time.clock() - self.game_start_clock)
         return int(0.5 + self.game_finish_clock - self.game_start_clock)
 
-    def get_remaining_mines_count(self):
+    def get_mines_info(self):
         return self.field_params.mines_count - self.mark_count
 
     def all_safe_opened(self):
-        self.user_won = True
+        self.finish_game(True)
+
+    def finish_game(self, user_won):
+        self.user_won = user_won
+        self.game_active = False
+        self.game_finish_clock = time.clock()
+        for cell in self.field.cells:
+            cell.set_final_status(user_won)
+        self.field.render()

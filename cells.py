@@ -51,6 +51,10 @@ class Cell(metaclass=ABCMeta):
                 'Передан неверный аргумент: status={}!'.format(status))
 
     @abstractmethod
+    def set_final_status(self, user_won):
+        pass
+
+    @abstractmethod
     def left_button_click(self):
         pass
 
@@ -80,12 +84,18 @@ class Cell(metaclass=ABCMeta):
 
 
 class MinedCell(Cell):
+    def set_final_status(self, user_won):
+        if self.status in (CellStatus.CLOSED, CellStatus.MARKED_BY_QUESTION):
+            self.status = (
+                CellStatus.MARKED_BY_FLAG
+                if user_won else
+                CellStatus.PASSIVE_MINE
+            )
+
     def left_button_click(self):
         if self.status == CellStatus.CLOSED:
-            # TODO: уведомить менеджера игры о
-            # том, что была открыта
-            # заминированная ячейка
-            pass
+            self.status = CellStatus.ACTIVE_MINE
+            self.game_manager.mined_cell_opened()
 
     def middle_button_click(self):
         pass
@@ -104,18 +114,25 @@ class SafeCell(Cell):
         # ячейки ещё могут быть не созданы
         # остальные ячейки на поле.
         self.mined_around = None
+        self.neighbors = None
+
+    def set_final_status(self, user_won):
+        if self.status == CellStatus.CLOSED:
+            self.status = CellStatus.NUMBER
+            self.set_mined_around()
+        elif self.status in self.marked_statuses:
+            self.status = CellStatus.FALSE_MINE
 
     def left_button_click(self):
         if self.status != CellStatus.CLOSED:
             return
 
         self.status = CellStatus.NUMBER
-        neighbors = self.field.get_neighbors(self.position)
-        self.mined_around = sum(1 for cell in neighbors if cell.is_danger())
+        self.set_mined_around()
         self.game_manager.safe_cell_opened()
 
         if self.mined_around == 0:
-            for cell in neighbors:
+            for cell in self.neighbors:
                 cell.left_button_click()
 
     def middle_button_click(self):
@@ -135,6 +152,10 @@ class SafeCell(Cell):
     def is_danger(self):
         return False
 
+    def set_mined_around(self):
+        self.neighbors = self.field.get_neighbors(self.position)
+        self.mined_around = sum(1 for cell in self.neighbors if cell.is_danger())
+
 
 class FakeCell(Cell):
     def left_button_click(self):
@@ -144,6 +165,9 @@ class FakeCell(Cell):
         pass
 
     def is_danger(self):
+        pass
+
+    def set_final_status(self, user_won):
         pass
 
 

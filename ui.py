@@ -8,6 +8,7 @@ from renderers import TkRenderContext
 
 class Window:
     def __init__(self):
+        self.game_manager = None
         self.render_context = self.create_render_context()
 
     @abstractmethod
@@ -18,20 +19,47 @@ class Window:
     def bind_manager(self, game_manager):
         pass
 
+    @abstractmethod
+    def _update_board(self, time_info, mines_info, game_active, user_won):
+        pass
+
+    def update_board(self):
+        if self.game_manager is not None:
+            self._update_board(
+                self.game_manager.get_time_info(),
+                self.game_manager.get_mines_info(),
+                self.game_manager.game_active,
+                self.game_manager.user_won,
+            )
+
     def get_render_context(self):
         return self.render_context
 
 
 class TkWindow(Window):
     def __init__(self):
-        self.game_manager = None
-
         self.font = ('arial', 8)
         self._create_widgets()
         super().__init__()
 
     def create_render_context(self):
         return TkRenderContext(self.canvas)
+
+    def _update_board(self, time_info, mines_info, game_active, user_won):
+        if not game_active:
+            if user_won:
+                win_info = 'You Win!'
+            else:
+                win_info = 'You Loose!'
+        else:
+            win_info = ''
+
+        board_label_text = '{:03d}; Time: {:03d}\t{}'.format(
+            mines_info, time_info, win_info)
+        self.board_label.configure(
+            text=board_label_text
+        )
+        self.root.after(500, self.update_board)
 
     def _set_icon(self):
         icon_path = os.path.join(
@@ -66,11 +94,11 @@ class TkWindow(Window):
         self.width_label = tk.Label(
             self.custom_group, text='Width', font=self.font)
         self.width_label.grid(column=0, row=0, sticky='w')
-        
+
         self.height_label = tk.Label(
             self.custom_group, text='Height', font=self.font)
         self.height_label.grid(column=0, row=1, sticky='w')
-        
+
         self.mines_count_label = tk.Label(
             self.custom_group, text='Mines Count', font=self.font)
         self.mines_count_label.grid(column=0, row=2, sticky='w')
@@ -116,14 +144,14 @@ class TkWindow(Window):
         self.custom_radio_button.pack(side='top', anchor='w')
 
     def _create_right_frame(self):
-        self.right_frame = tk.Label(self.root, bd=5)
+        self.right_frame = tk.Frame(self.root, bd=5)
         self.right_frame.pack(side='right', anchor='n')
 
-        self.status_label = tk.Label(self.right_frame, font=('arial', 14))
-        self.status_label.pack(side='top', anchor='w')
+        self.board_label = tk.Label(self.right_frame, font=('arial', 14))
+        self.board_label.pack(side='top', anchor='w')
 
         self.canvas = tk.Canvas(self.right_frame)
-        self.canvas.pack()
+        self.canvas.pack(side='bottom', anchor='w')
 
     def bind_manager(self, game_manager):
         self.game_manager = game_manager
@@ -132,9 +160,7 @@ class TkWindow(Window):
         self.canvas.bind('<Button-2>', game_manager.mouse_click)
         self.canvas.bind('<Button-3>', game_manager.mouse_click)
 
-    def update_board(self):
-        pass
-
     def run(self):
+        self.root.after(0, self.update_board)
         self.game_manager.field.render()
         self.root.mainloop()

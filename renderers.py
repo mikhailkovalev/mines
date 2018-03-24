@@ -1,4 +1,5 @@
 import os.path
+from copy import copy
 from abc import ABCMeta, abstractmethod
 
 import tkinter as tk
@@ -126,6 +127,9 @@ class RectangleRenderer(AbstractRenderer):
         self.images_are_got = True
 
     def render(self, cell):
+        if self.context is None:
+            return
+
         if not self.images_are_got:
             self.get_images()
 

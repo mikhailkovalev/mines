@@ -7,7 +7,8 @@ def main():
     main_window = TkWindow()
     manager = GameManager()
     main_window.bind_manager(manager)
-    manager.set_render_context(main_window.get_render_context())
+    manager.set_render_context(
+        main_window.get_render_context())
     main_window.run()
 
 
