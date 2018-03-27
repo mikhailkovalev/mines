@@ -14,30 +14,10 @@ class GameManager:
             2: 'middle_button_click',
             3: 'right_button_click'
         }
-        self.field_params = None
-        self.field = None
-        self.user_won = None
-        self.game_active = None
-
-        self.mark_count = None
-        self.safe_opened_count = None
-        self.safe_count = None
-
-        self.game_start_clock = None
-        self.game_finish_clock = None
-
         self.render_context = None
-        self.new_game()
+        self._reset_game_state()
 
-    def set_render_context(self, render_context):
-        render_context.resize(
-            *self.field.get_canvas_size())
-        self.render_context = render_context
-        if self.field.renderer.context is None:
-            self.field.renderer.context = render_context
-        self.field.render()
-
-    def new_game(self):
+    def _reset_game_state(self):
         # FIXME: Сейчас класс поля, а также его
         # размеры заданы хардкодом. В дальнейшем
         # следует использовать фабрику, берущую
@@ -48,9 +28,6 @@ class GameManager:
         self.field = RectangleField(
             self.field_params, self)
 
-        if self.render_context is not None:
-            self.render_context.resize(*self.field.get_canvas_size())
-
         self.user_won = False
         self.game_active = True
 
@@ -60,6 +37,19 @@ class GameManager:
         self.mark_count = 0
         self.safe_opened_count = 0
         self.safe_count = self.field.cell_count - self.field_params.mines_count
+
+    def set_render_context(self, render_context):
+        render_context.resize(
+            *self.field.get_canvas_size())
+        self.render_context = render_context
+        if self.field.renderer.context is None:
+            self.field.renderer.context = render_context
+        self.field.render()
+
+    def new_game(self):
+        self._reset_game_state()
+        if self.render_context is not None:
+            self.render_context.resize(*self.field.get_canvas_size())
         self.field.render()
 
     def mouse_click(self, event):

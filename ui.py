@@ -1,6 +1,8 @@
 import os.path
 import tkinter as tk
 from abc import abstractmethod
+from functools import partial
+
 from PIL import Image, ImageTk
 
 from renderers import TkRenderContext
@@ -123,25 +125,29 @@ class TkWindow(Window):
         self.level_intvar = tk.IntVar()
         self.level_intvar.set(1)
 
-        self.easy_radio_button = tk.Radiobutton(
-            self.level_group, text='Rookie', font=self.font,
-            variable=self.level_intvar, value=1)
-        self.easy_radio_button.pack(side='top', anchor='w')
+        radio_button_fabric = partial(
+            tk.Radiobutton,
+            master=self.level_group,
+            font=self.font,
+            variable=self.level_intvar,
+            command=self.change_level
+        )
 
-        self.middle_radio_button = tk.Radiobutton(
-            self.level_group, text='Veteran', font=self.font,
-            variable=self.level_intvar, value=2)
-        self.middle_radio_button.pack(side='top', anchor='w')
+        def create_radio_button(text, value):
+            radio_button = radio_button_fabric(
+                text=text, value=value)
+            radio_button.pack(side='top', anchor='w')
+            return radio_button
 
-        self.hard_radio_button = tk.Radiobutton(
-            self.level_group, text='Warrior', font=self.font,
-            variable=self.level_intvar, value=3)
-        self.hard_radio_button.pack(side='top', anchor='w')
-
-        self.custom_radio_button = tk.Radiobutton(
-            self.level_group, text='Custom', font=self.font,
-            variable=self.level_intvar, value=4)
-        self.custom_radio_button.pack(side='top', anchor='w')
+        # FIXME: Информация о названиях уровней и
+        # их характеристиках должна приходить из
+        # manager-а, а UI должны подстраиваться
+        # под неё.
+        level_names = ('Rookie', 'Veteran', 'Warrior', 'Custom')
+        self.level_radio_buttons = tuple(
+            create_radio_button(name, idx)
+            for idx, name in enumerate(level_names, 1)
+        )
 
     def _create_right_frame(self):
         self.right_frame = tk.Frame(self.root, bd=5)
@@ -159,6 +165,9 @@ class TkWindow(Window):
         self.canvas.bind('<Button-1>', game_manager.mouse_click)
         self.canvas.bind('<Button-2>', game_manager.mouse_click)
         self.canvas.bind('<Button-3>', game_manager.mouse_click)
+
+    def change_level(self):
+        pass
 
     def run(self):
         self.root.after(0, self.update_board)
