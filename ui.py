@@ -2,10 +2,12 @@ import os.path
 import tkinter as tk
 from abc import abstractmethod
 from functools import partial
+from collections import namedtuple
 
 from PIL import Image, ImageTk
 
 from renderers import TkRenderContext
+from game_managers import LevelEnum
 
 
 class Window:
@@ -38,10 +40,14 @@ class Window:
         return self.render_context
 
 
+LabeledWidget = namedtuple('LabeledWidget', ('label', 'widget'))
+
+
 class TkWindow(Window):
     def __init__(self):
         self.font = ('arial', 8)
         self._create_widgets()
+        self.level_radio_buttons = None
         super().__init__()
 
     def create_render_context(self):
@@ -93,29 +99,33 @@ class TkWindow(Window):
             self.left_frame, text='Custom Settings', font=self.font, padx=5)
         self.custom_group.pack(side='top', anchor='w')
 
-        self.width_label = tk.Label(
-            self.custom_group, text='Width', font=self.font)
-        self.width_label.grid(column=0, row=0, sticky='w')
+        label_factory = partial(
+            tk.Label,
+            master=self.custom_group,
+            font=self.font
+        )
 
-        self.height_label = tk.Label(
-            self.custom_group, text='Height', font=self.font)
-        self.height_label.grid(column=0, row=1, sticky='w')
+        spinbox_factory = partial(
+            tk.Spinbox,
+            master=self.custom_group,
+            from_=10,
+            to=30,
+            width=3
+        )
 
-        self.mines_count_label = tk.Label(
-            self.custom_group, text='Mines Count', font=self.font)
-        self.mines_count_label.grid(column=0, row=2, sticky='w')
+        param_names = ('Width', 'Height', 'Mines Count')
 
-        self.width_spinbox = tk.Spinbox(
-            self.custom_group, from_=10, to=30, width=3)
-        self.width_spinbox.grid(column=1, row=0)
+        self.custom_params_editors = tuple(
+            LabeledWidget(
+                label=label_factory(text=name),
+                widget=spinbox_factory(),
+            )
+            for name in param_names
+        )
 
-        self.height_spinbox = tk.Spinbox(
-            self.custom_group, from_=10, to=30, width=3)
-        self.height_spinbox.grid(column=1, row=1)
-
-        self.mines_count_spinbox = tk.Spinbox(
-            self.custom_group, from_=10, to=30, width=3)
-        self.mines_count_spinbox.grid(column=1, row=2)
+        for idx, labeled_widget in enumerate(self.custom_params_editors):
+            labeled_widget.label.grid(column=0, row=idx, sticky='w')
+            labeled_widget.widget.grid(column=1, row=idx)
 
     def _create_level_group(self):
         self.level_group = tk.LabelFrame(
@@ -124,30 +134,6 @@ class TkWindow(Window):
 
         self.level_intvar = tk.IntVar()
         self.level_intvar.set(1)
-
-        radio_button_fabric = partial(
-            tk.Radiobutton,
-            master=self.level_group,
-            font=self.font,
-            variable=self.level_intvar,
-            command=self.change_level
-        )
-
-        def create_radio_button(text, value):
-            radio_button = radio_button_fabric(
-                text=text, value=value)
-            radio_button.pack(side='top', anchor='w')
-            return radio_button
-
-        # FIXME: Информация о названиях уровней и
-        # их характеристиках должна приходить из
-        # manager-а, а UI должны подстраиваться
-        # под неё.
-        level_names = ('Rookie', 'Veteran', 'Warrior', 'Custom')
-        self.level_radio_buttons = tuple(
-            create_radio_button(name, idx)
-            for idx, name in enumerate(level_names, 1)
-        )
 
     def _create_right_frame(self):
         self.right_frame = tk.Frame(self.root, bd=5)
@@ -165,6 +151,25 @@ class TkWindow(Window):
         self.canvas.bind('<Button-1>', game_manager.mouse_click)
         self.canvas.bind('<Button-2>', game_manager.mouse_click)
         self.canvas.bind('<Button-3>', game_manager.mouse_click)
+
+        radio_button_fabric = partial(
+            tk.Radiobutton,
+            master=self.level_group,
+            font=self.font,
+            variable=self.level_intvar,
+            command=self.change_level
+        )
+
+        def create_radio_button(text, value):
+            radio_button = radio_button_fabric(
+                text=text, value=value)
+            radio_button.pack(side='top', anchor='w')
+            return radio_button
+
+        self.level_radio_buttons = tuple(
+            create_radio_button(game_manager.level_names[v], v.value)
+            for v in LevelEnum
+        )
 
     def change_level(self):
         pass

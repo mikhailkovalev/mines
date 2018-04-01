@@ -1,7 +1,15 @@
 import time
+from enum import IntEnum, auto
 
 from fields import RectangleField
 from api import FieldParams
+
+
+class LevelEnum(IntEnum):
+    ROOKIE = auto()
+    VETERAN = auto()
+    WARRIOR = auto()
+    CUSTOM = auto()
 
 
 class GameManager:
@@ -14,6 +22,20 @@ class GameManager:
             2: 'middle_button_click',
             3: 'right_button_click'
         }
+
+        self.level_field_map = {
+            LevelEnum.ROOKIE: FieldParams(10, 10, 10),
+            LevelEnum.VETERAN: FieldParams(16, 16, 40),
+            LevelEnum.WARRIOR: FieldParams(30, 16, 99),
+        }
+
+        self.level_names = {
+            LevelEnum.ROOKIE: 'Rookie',
+            LevelEnum.VETERAN: 'Veteran',
+            LevelEnum.WARRIOR: 'Warrior',
+            LevelEnum.CUSTOM: 'Custom',
+        }
+
         self.render_context = None
         self._reset_game_state()
 
