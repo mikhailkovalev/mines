@@ -36,17 +36,16 @@ class GameManager:
             LevelEnum.CUSTOM: 'Custom',
         }
 
+        self.default_field_params = FieldParams(
+            width=10, height=10, mines_count=10)
         self.render_context = None
         self._reset_game_state()
 
-    def _reset_game_state(self):
-        # FIXME: Сейчас класс поля, а также его
-        # размеры заданы хардкодом. В дальнейшем
-        # следует использовать фабрику, берущую
-        # информацию о типе поля в
-        # конфиг-словаре.
-        self.field_params = FieldParams(
-            width=10, height=10, mines_count=10)
+    def _reset_game_state(self, field_params=None):
+        if field_params is None:
+            self.field_params = self.default_field_params
+        else:
+            self.field_params = field_params
         self.field = RectangleField(
             self.field_params, self)
 
@@ -68,8 +67,8 @@ class GameManager:
             self.field.renderer.context = render_context
         self.field.render()
 
-    def new_game(self):
-        self._reset_game_state()
+    def new_game(self, level, custom_params):
+        self._reset_game_state(self.level_field_map.get(level, custom_params))
         if self.render_context is not None:
             self.render_context.resize(*self.field.get_canvas_size())
         self.field.render()

@@ -138,10 +138,12 @@ class RectangleRenderer(AbstractRenderer):
         else:
             sprite = self.images[cell.status]
 
-        position = tuple(
-            size * coord
-            for size, coord
-            in zip(self.cell_size, cell.position)
+        position = (
+            # ширину ячейки умножаем на номер столбца
+            self.cell_size[0] * cell.position[1],
+
+            # высоту ячейки умножаем на номер строки
+            self.cell_size[1] * cell.position[0],
         )
         self.context.draw_image(position, sprite)
 

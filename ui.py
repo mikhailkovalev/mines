@@ -1,13 +1,14 @@
 import os.path
 import tkinter as tk
-from abc import abstractmethod
 from functools import partial
+from abc import abstractmethod
 from collections import namedtuple
 
 from PIL import Image, ImageTk
 
-from renderers import TkRenderContext
+from api import FieldParams
 from game_managers import LevelEnum
+from renderers import TkRenderContext
 
 
 class Window:
@@ -133,6 +134,9 @@ class TkWindow(Window):
         self.level_group.pack(side='top', anchor='w')
 
         self.level_intvar = tk.IntVar()
+
+        # FIXME: дефолтное значение должно
+        # приходить из менеджера
         self.level_intvar.set(1)
 
     def _create_right_frame(self):
@@ -147,7 +151,7 @@ class TkWindow(Window):
 
     def bind_manager(self, game_manager):
         self.game_manager = game_manager
-        self.new_game_button.configure(command=game_manager.new_game)
+        self.new_game_button.configure(command=self.on_new_game_clicked)
         self.canvas.bind('<Button-1>', game_manager.mouse_click)
         self.canvas.bind('<Button-2>', game_manager.mouse_click)
         self.canvas.bind('<Button-3>', game_manager.mouse_click)
@@ -172,7 +176,18 @@ class TkWindow(Window):
         )
 
     def change_level(self):
+        # TODO: должен обновлять виджеты
+        # кастомных параметров в соответствии
+        # с выбранным уровнем
         pass
+
+    def on_new_game_clicked(self):
+        if self.game_manager:
+            custom_params = FieldParams(*(
+                int(e.widget.get())
+                for e in self.custom_params_editors
+            ))
+            self.game_manager.new_game(self.level_intvar.get(), custom_params)
 
     def run(self):
         self.root.after(0, self.update_board)

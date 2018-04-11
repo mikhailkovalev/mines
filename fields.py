@@ -116,7 +116,7 @@ class RectangleField(AbstractField):
     def get_position_by_pixel(self, pixel):
         column = pixel[0] // self.renderer.cell_size[0]
         row = pixel[1] // self.renderer.cell_size[1]
-        return column, row
+        return row, column
 
     def get_cell_by_position(self, position):
         idx = self.get_idx_by_position(position)
@@ -150,8 +150,8 @@ class RectangleField(AbstractField):
         self.cells[self.get_idx_by_position(safe_position)].left_button_click()
 
     def valid_position(self, position):
-        return (0 <= position[0] < self.width and
-                0 <= position[1] < self.height)
+        return (0 <= position[0] < self.height and
+                0 <= position[1] < self.width)
 
     def are_neighbors(self, position1, position2):
         return max(map(abs_sub, position1, position2)) <= 1
