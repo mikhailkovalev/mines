@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import time
 from enum import IntEnum, auto
 
@@ -91,7 +93,7 @@ class GameManager:
         if self.safe_opened_count == self.safe_count:
             self.all_safe_opened()
         if self.game_start_clock is None:
-            self.game_start_clock = time.clock()
+            self.game_start_clock = time.time()
 
     def mined_cell_opened(self):
         self.finish_game(False)
@@ -103,7 +105,7 @@ class GameManager:
         if self.game_start_clock is None:
             return 0
         if self.game_finish_clock is None:
-            return int(0.5 + time.clock() - self.game_start_clock)
+            return int(0.5 + time.time() - self.game_start_clock)
         return int(0.5 + self.game_finish_clock - self.game_start_clock)
 
     def get_mines_info(self):
@@ -115,7 +117,7 @@ class GameManager:
     def finish_game(self, user_won):
         self.user_won = user_won
         self.game_active = False
-        self.game_finish_clock = time.clock()
+        self.game_finish_clock = time.time()
         for cell in self.field.cells:
             cell.set_final_status(user_won)
         self.field.render()
