@@ -176,7 +176,10 @@ class RectangleField(AbstractField):
 
 class HexagonalField(AbstractField):
     def get_cell_count(self, width, height):
-        raise NotImplementedError
+        height_div_2, residue = divmod(height, 2)
+        cell_count = (width*(height_div_2 + residue) +
+                        (width-1)*height_div_2)
+        return cell_count
 
     def get_position_by_idx(self, idx):
         raise NotImplementedError
