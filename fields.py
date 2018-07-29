@@ -172,3 +172,28 @@ class RectangleField(AbstractField):
             for position in checking_positions
             if self.valid_position(position)
         )
+
+
+class HexagonalField(AbstractField):
+    def get_cell_count(self, width, height):
+        raise NotImplementedError
+
+    def get_position_by_idx(self, idx):
+        raise NotImplementedError
+
+    def get_idx_by_position(self, position):
+        raise NotImplementedError
+
+    @staticmethod
+    def create_renderer(render_context):
+        raise NotImplementedError
+
+    def generate(self, safe_position):
+        raise NotImplementedError
+
+    def are_neighbors(self, position1, position2):
+        raise NotImplementedError
+
+    def get_neighbors(self, position):
+        raise NotImplementedError
+
