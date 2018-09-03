@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 
 from api import abs_sub
 from cells import FakeCell, cell_fabric
-from renderers import RectangleRenderer
+from renderers import RectangleRenderer, HexagonalRenderer
 from functools import partial
 
 
@@ -123,6 +123,7 @@ class RectangleField(AbstractField):
         return self.cells[idx]
 
     def generate(self, safe_position):
+        # TODO: Возможно следует вынести в абстрактный класс
         mined_cells = set()
         mined_count = 0
         while mined_count < self.mines_count:
@@ -147,6 +148,8 @@ class RectangleField(AbstractField):
             for i in range(self.cell_count)
         )
         self.cells = new_cells
+
+        # TODO: вынести на уровень выше
         self.cells[self.get_idx_by_position(safe_position)].left_button_click()
 
     def valid_position(self, position):
@@ -189,7 +192,7 @@ class HexagonalField(AbstractField):
 
     @staticmethod
     def create_renderer(render_context):
-        raise NotImplementedError
+        return HexagonalRenderer(render_context)
 
     def generate(self, safe_position):
         raise NotImplementedError

@@ -73,7 +73,7 @@ class AbstractRenderer(metaclass=ABCMeta):
 
     @abstractmethod
     def render(self, cell):
-        pass
+        assert self.context is not None, 'Render context is None!'
 
 
 class RectangleRenderer(AbstractRenderer):
@@ -127,8 +127,7 @@ class RectangleRenderer(AbstractRenderer):
         self.images_are_got = True
 
     def render(self, cell):
-        if self.context is None:
-            return
+        super().render(cell)
 
         if not self.images_are_got:
             self.get_images()
@@ -149,4 +148,6 @@ class RectangleRenderer(AbstractRenderer):
 
 
 class HexagonalRenderer(AbstractRenderer):
-    pass
+    def render(self, cell):
+        super().render(cell)
+        raise NotImplementedError
