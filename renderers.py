@@ -1,11 +1,12 @@
 import os.path
-from copy import copy
+from itertools import chain
 from abc import ABCMeta, abstractmethod
 
 import tkinter as tk
 from PIL import Image, ImageTk
 
 from cells import CellStatus
+from api import COS_SIN_DATA
 
 
 class AbstractRenderContext(metaclass=ABCMeta):
@@ -16,6 +17,18 @@ class AbstractRenderContext(metaclass=ABCMeta):
     @abstractmethod
     def draw_image(self, position, image):
         pass
+
+    @abstractmethod
+    def draw_hexagon(self, center, size):
+        """
+        Рисует шестиугольник
+
+        :param center: Координаты цента шестиугольника
+        :type center: Iterable
+
+        :param size: Размер стороны шестиугольника в пикселях
+        :type size: int, float
+        """
 
     @abstractmethod
     def draw_rectangle(self, position, size):
@@ -41,6 +54,18 @@ class TkRenderContext(AbstractRenderContext):
         assert isinstance(image, (tk.PhotoImage, ImageTk.PhotoImage)), \
                'Image must be tkinter.PhotoImage or ImageTk.PhotoImage!'
         self.canvas.create_image(position, image=image, anchor=tk.NW)
+
+    def draw_hexagon(self, center, size):
+        vertices = tuple(
+            tuple(center[j] + size*COS_SIN_DATA[i][j] for j in range(2))
+            for i in range(6)
+        )
+        self.canvas.create_polygon(
+            vertices,
+            outline='black',
+            width=2,
+            fill=''
+        )
 
     def draw_rectangle(self, position, size):
         bbox = (
