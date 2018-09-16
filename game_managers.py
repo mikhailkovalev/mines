@@ -3,7 +3,7 @@
 import time
 from enum import IntEnum, auto
 
-from fields import RectangleField
+from fields import HexagonalField
 from api import FieldParams
 
 
@@ -48,7 +48,7 @@ class GameManager:
             self.field_params = self.default_field_params
         else:
             self.field_params = field_params
-        self.field = RectangleField(
+        self.field = HexagonalField(
             self.field_params, self)
 
         self.user_won = False

@@ -5,8 +5,8 @@ from abc import ABCMeta, abstractmethod
 import tkinter as tk
 from PIL import Image, ImageTk
 
-from cells import CellStatus
-from api import COS_SIN_DATA
+from cells import CellStatus, Cell
+from api import COS_SIN_DATA, SQRT_THREE
 
 
 class AbstractRenderContext(metaclass=ABCMeta):
@@ -55,16 +55,23 @@ class TkRenderContext(AbstractRenderContext):
                'Image must be tkinter.PhotoImage or ImageTk.PhotoImage!'
         self.canvas.create_image(position, image=image, anchor=tk.NW)
 
-    def draw_hexagon(self, center, size):
+    def draw_hexagon(self, center, size, **kwargs):
         vertices = tuple(
             tuple(center[j] + size*COS_SIN_DATA[i][j] for j in range(2))
             for i in range(6)
         )
-        self.canvas.create_polygon(
-            vertices,
-            outline='black',
+
+        default_kwargs = dict(
+            outline='grey',
             width=2,
             fill=''
+        )
+
+        default_kwargs.update(kwargs)
+
+        self.canvas.create_polygon(
+            vertices,
+            **default_kwargs
         )
 
     def draw_rectangle(self, position, size):
@@ -173,6 +180,31 @@ class RectangleRenderer(AbstractRenderer):
 
 
 class HexagonalRenderer(AbstractRenderer):
+    def __init__(self, context):
+        super().__init__(context)
+        self.cell_side = 20
+        self.cell_width = self.cell_side * SQRT_THREE
+        self.cell_height = 2 * self.cell_side
+        self.partial_cell_height = (self.cell_side * 3) >> 1
+        self.cell_size = (self.cell_width, self.cell_height)
+
     def render(self, cell):
         super().render(cell)
-        raise NotImplementedError
+
+        row, column = cell.position
+
+        y = row * self.partial_cell_height + (self.cell_height >> 1)
+        x = column * self.cell_width + (1 + (row & 1)) * (self.cell_width / 2)
+
+        center = (x, y)
+
+        if cell.status == CellStatus.CLOSED:
+            self.context.draw_hexagon(center, self.cell_side, fill='black')
+        elif cell.status == CellStatus.NUMBER:
+            self.context.draw_hexagon(center, self.cell_side, fill='white')
+            self.context.draw_text(center, str(cell.mined_around), 'arial')
+        elif cell.status in Cell.marked_statuses:
+            self.context.draw_hexagon(center, self.cell_side, fill='blue')
+        elif cell.status == CellStatus.ACTIVE_MINE:
+            self.context.draw_hexagon(center, self.cell_side, fill='red')
+
