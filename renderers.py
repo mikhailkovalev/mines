@@ -29,6 +29,10 @@ class AbstractRenderContext(metaclass=ABCMeta):
     def resize(self, width, height):
         pass
 
+    @abstractmethod
+    def clear(self):
+        pass
+
 
 class TkRenderContext(AbstractRenderContext):
     def __init__(self, canvas=None):
@@ -66,6 +70,9 @@ class TkRenderContext(AbstractRenderContext):
             height=height
         )
 
+    def clear(self):
+        self.canvas.delete('all')
+
 
 class AbstractRenderer(metaclass=ABCMeta):
     def __init__(self, context):
@@ -73,6 +80,10 @@ class AbstractRenderer(metaclass=ABCMeta):
 
     @abstractmethod
     def render(self, cell):
+        pass
+
+    @abstractmethod
+    def clear(self):
         pass
 
 
@@ -146,6 +157,9 @@ class RectangleRenderer(AbstractRenderer):
             self.cell_size[1] * cell.position[0],
         )
         self.context.draw_image(position, sprite)
+
+    def clear(self):
+        self.context.clear()
 
 
 class HexagonalRenderer(AbstractRenderer):

@@ -88,6 +88,7 @@ class AbstractField(metaclass=ABCMeta):
         """
 
     def render(self):
+        self.renderer.clear()
         for cell in self.cells:
             self.renderer.render(cell)
 
