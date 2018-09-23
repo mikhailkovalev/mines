@@ -1,14 +1,15 @@
 import os.path
 from copy import copy
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 import tkinter as tk
 from PIL import Image, ImageTk
 
+from api import SingletonAbcMeta
 from cells import CellStatus
 
 
-class AbstractRenderContext(metaclass=ABCMeta):
+class AbstractRenderContext(metaclass=SingletonAbcMeta):
     """
     Предоставляет интерфейс рисования примитивов
     """
@@ -74,7 +75,7 @@ class TkRenderContext(AbstractRenderContext):
         self.canvas.delete('all')
 
 
-class AbstractRenderer(metaclass=ABCMeta):
+class AbstractRenderer(metaclass=SingletonAbcMeta):
     def __init__(self, context):
         self.context = context
 
