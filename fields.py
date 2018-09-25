@@ -135,12 +135,11 @@ class AbstractField(metaclass=ABCMeta):
         for cell in self.cells:
             self.renderer.render(cell)
 
+    @abstractmethod
     def get_canvas_size(self):
         """
         Возвращает ширину и высоту холста в пикселях
         """
-        return (self.width * self.renderer.cell_size[0],
-                self.height * self.renderer.cell_size[1])
 
 
 class RectangleField(AbstractField):
@@ -190,6 +189,10 @@ class RectangleField(AbstractField):
             for position in checking_positions
             if self.valid_position(position)
         )
+    
+    def get_canvas_size(self):
+        return (self.width * self.renderer.cell_size[0],
+                self.height * self.renderer.cell_size[1])
 
 
 class HexagonalField(AbstractField):
@@ -270,3 +273,11 @@ class HexagonalField(AbstractField):
             for position in checking_positions
             if self.valid_position(position)
         )
+    
+    def get_canvas_size(self):
+        cell_width, cell_height = self.renderer.cell_size
+        return (
+            self.width * cell_width,
+            0.25*((3*self.height+1) * cell_height)
+        )
+
