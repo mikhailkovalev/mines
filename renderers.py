@@ -1,15 +1,14 @@
 import os.path
-from itertools import chain
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 import tkinter as tk
 from PIL import Image, ImageTk
 
 from cells import CellStatus, Cell
-from api import COS_SIN_DATA, SQRT_THREE
+from api import SingletonAbcMeta, COS_SIN_DATA, SQRT_THREE
 
 
-class AbstractRenderContext(metaclass=ABCMeta):
+class AbstractRenderContext(metaclass=SingletonAbcMeta):
     """
     Предоставляет интерфейс рисования примитивов
     """
@@ -40,6 +39,10 @@ class AbstractRenderContext(metaclass=ABCMeta):
 
     @abstractmethod
     def resize(self, width, height):
+        pass
+
+    @abstractmethod
+    def clear(self):
         pass
 
 
@@ -98,14 +101,21 @@ class TkRenderContext(AbstractRenderContext):
             height=height
         )
 
+    def clear(self):
+        self.canvas.delete('all')
 
-class AbstractRenderer(metaclass=ABCMeta):
+
+class AbstractRenderer(metaclass=SingletonAbcMeta):
     def __init__(self, context):
         self.context = context
 
     @abstractmethod
     def render(self, cell):
         assert self.context is not None, 'Render context is None!'
+
+    @abstractmethod
+    def clear(self):
+        pass
 
 
 class RectangleRenderer(AbstractRenderer):
@@ -178,6 +188,9 @@ class RectangleRenderer(AbstractRenderer):
         )
         self.context.draw_image(position, sprite)
 
+    def clear(self):
+        self.context.clear()
+
 
 class HexagonalRenderer(AbstractRenderer):
     def __init__(self, context):
@@ -207,4 +220,7 @@ class HexagonalRenderer(AbstractRenderer):
             self.context.draw_hexagon(center, self.cell_side, fill='blue')
         elif cell.status == CellStatus.ACTIVE_MINE:
             self.context.draw_hexagon(center, self.cell_side, fill='red')
+   
+    def clear(self):
+        self.context.clear()
 
