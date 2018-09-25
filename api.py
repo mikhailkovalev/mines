@@ -26,7 +26,7 @@ def oddr_to_cube(position):
 
 
 def cube_distance(cube1, cube2):
-    return sum(abs_sub(*e) for e in zip(cube1, cube2)) >> 1
+    return sum(map(abs_sub, cube1, cube2)) >> 1
 
 
 def cube_round(cube):
@@ -65,3 +65,4 @@ ONE_DIV_THREE = 0.333
 TWO_DIV_THREE = 0.667
 ONE_DIV_SQRT_THREE = 0.577
 SQRT_THREE = 1.732
+
